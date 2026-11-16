@@ -1,6 +1,11 @@
 import type { CurrentUser, Note } from '../types';
 
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
+// NUEVO: .replace(/\/+$/, '') quita todas las barras del final.
+// \/+ = una o más "/"   |   $ = al final del texto   |   '' = reemplazar por nada
+// Así 'https://x.app/' y 'https://x.app' dan el mismo resultado.
+const API_URL = (
+  import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
+).replace(/\/+$/, '');
 
 function authHeader(): Record<string, string> {
   const token = localStorage.getItem('auth-token');
