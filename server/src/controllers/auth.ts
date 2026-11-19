@@ -5,7 +5,9 @@ import jwt from 'jsonwebtoken';
 import User from '../models/user.js';
 
 export const register = async (req: Request, res: Response) => {
-  const { email, password, name } = req.body;
+  // CORREGIDO: `?? {}` evita el TypeError si la petición llega sin body.
+  // En Express 5, req.body es undefined cuando no hay JSON.
+  const { email, password, name } = req.body ?? {};
 
   if (!email || !password || !name) {
     res.status(400).json({
@@ -16,11 +18,16 @@ export const register = async (req: Request, res: Response) => {
     return;
   }
 
-  if (typeof email !== 'string' || typeof password !== 'string') {
+  // CORREGIDO: ahora también se comprueba el tipo de `name`.
+  if (
+    typeof email !== 'string' ||
+    typeof password !== 'string' ||
+    typeof name !== 'string'
+  ) {
     res.status(400).json({
       success: false,
       data: null,
-      error: { message: 'Los campos email y password deben ser texto' },
+      error: { message: 'Los campos email, password y name deben ser texto' },
     });
     return; // convocar (return) corta la función: no llega al hash
   }
@@ -58,13 +65,26 @@ export const register = async (req: Request, res: Response) => {
 };
 
 export const login = async (req: Request, res: Response) => {
-  const { email, password } = req.body;
+  // CORREGIDO: mismo `?? {}` que en register.
+  const { email, password } = req.body ?? {};
 
   if (!email || !password) {
     res.status(400).json({
       success: false,
       data: null,
       error: { message: 'Los campos email y password son obligatorios' },
+    });
+    return;
+  }
+
+  // NUEVO: sin esta comprobación, un objeto como { "$ne": null } llegaría
+  // hasta User.findOne y se ejecutaría como operador de MongoDB.
+  // Va ANTES de la consulta a la base y antes de bcrypt.compare.
+  if (typeof email !== 'string' || typeof password !== 'string') {
+    res.status(400).json({
+      success: false,
+      data: null,
+      error: { message: 'Los campos email y password deben ser texto' },
     });
     return;
   }
